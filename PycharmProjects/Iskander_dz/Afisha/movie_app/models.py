@@ -23,10 +23,9 @@ class Movie(models.Model):
 
 
 class Review(models.Model):
-    DoesNotExist = None
-    objects = None
     text = models.TextField()
-    movie = models.ForeignKey(Movie, related_name='reviews', on_delete=models.CASCADE)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    stars = models.PositiveIntegerField(default=1)
 
     def __str__(self):
-        return self.text[:50]
+        return f"{self.text} - {self.stars}/5"
