@@ -1,10 +1,11 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from django.http import Http404
 from .models import Director, Movie, Review
 from .serializers import DirectorSerializer, MovieSerializer, ReviewSerializer
-from django.db.models import Avg
-from django.db.models import Count
+from django.db.models import Avg, Count
+
 
 class DirectorList(APIView):
     def get(self, request):
@@ -21,19 +22,19 @@ class DirectorList(APIView):
 
 
 class DirectorDetail(APIView):
-    def get(self, request, id):
+    def get_object(self, id):
         try:
-            director = Director.objects.get(pk=id)
+            return Director.objects.get(pk=id)
         except Director.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise Http404
+
+    def get(self, request, id):
+        director = self.get_object(id)
         serializer = DirectorSerializer(director)
         return Response(serializer.data)
 
     def put(self, request, id):
-        try:
-            director = Director.objects.get(pk=id)
-        except Director.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        director = self.get_object(id)
         serializer = DirectorSerializer(director, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -41,12 +42,9 @@ class DirectorDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
-        try:
-            director = Director.objects
-            director.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Director.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        director = self.get_object(id)
+        director.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class MovieList(APIView):
@@ -64,19 +62,19 @@ class MovieList(APIView):
 
 
 class MovieDetail(APIView):
-    def get(self, request, id):
+    def get_object(self, id):
         try:
-            movie = Movie.objects.get(pk=id)
+            return Movie.objects.get(pk=id)
         except Movie.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise Http404
+
+    def get(self, request, id):
+        movie = self.get_object(id)
         serializer = MovieSerializer(movie)
         return Response(serializer.data)
 
     def put(self, request, id):
-        try:
-            movie = Movie.objects.get(pk=id)
-        except Movie.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        movie = self.get_object(id)
         serializer = MovieSerializer(movie, data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -84,12 +82,9 @@ class MovieDetail(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, id):
-        try:
-            movie = Movie.objects
-            movie.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Movie.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        movie = self.get_object(id)
+        movie.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ReviewList(APIView):
@@ -106,47 +101,41 @@ class ReviewList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def delete(request, id):
-    try:
-        review = Review.objects.get(pk=id)
-        review.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    except Review.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-
 class ReviewDetail(APIView):
-    def get(self, request, id):
+    def get_object(self, id):
         try:
-            review = Review.objects.get(pk=id)
+            return Review.objects.get(pk=id)
         except Review.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+            raise Http404
+
+    def get(self, request, id):
+        review = self.get_object(id)
         serializer = ReviewSerializer(review)
         return Response(serializer.data)
 
     def put(self, request, id):
-        try:
-            review = Review.objects.get(pk=id)
-        except Review.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
+        review = self.get_object(id)
         serializer = ReviewSerializer(review, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, id):
+        review = self.get_object(id)
+        review.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class MoviesWithReviews(APIView):
     def get(self, request):
-        movies = Movie.objects.all()
+        movies = Movie.objects.prefetch_related('reviews').annotate(avg_rating=Avg('reviews__stars'))
         data = []
         for movie in movies:
-            reviews = Review.objects.filter(movie=movie)
-            avg_rating = reviews.aggregate(Avg('stars'))['stars__avg']
             data.append({
                 'movie': MovieSerializer(movie).data,
-                'reviews': ReviewSerializer(reviews, many=True).data,
-                'rating': avg_rating
+                'reviews': ReviewSerializer(movie.reviews.all(), many=True).data,
+                'rating': movie.avg_rating
             })
         return Response(data)
 
