@@ -29,7 +29,6 @@ ALLOWED_HOSTS = []
 
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -39,7 +38,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'movie_app',
+
 ]
+
+AUTH_USER_MODEL = 'movie_app.User'
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

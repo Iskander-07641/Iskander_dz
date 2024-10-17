@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import Http404
-from .models import Director, Movie, Review
-from .serializers import DirectorSerializer, MovieSerializer, ReviewSerializer
+from .models import Director, Movie, Review, User
+from .serializers import DirectorSerializer, MovieSerializer, ReviewSerializer, UserRegistrationSerializer, UserConfirmationSerializer
 from django.db.models import Avg, Count
 
 
@@ -150,3 +150,27 @@ class DirectorsWithMoviesCount(APIView):
                 'movies_count': director.movies_count
             })
         return Response(data)
+
+
+class UserRegistrationView(APIView):
+    def post(self, request):
+        serializer = UserRegistrationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({"message": "User registered."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class UserConfirmationView(APIView):
+    def post(self, request):
+        serializer = UserConfirmationSerializer(data=request.data)
+        if serializer.is_valid():
+            username = serializer.validated_data['username']
+            user = User.objects.get(username=username)
+            user.is_active = True
+            user.confirmation_code = ""
+            user.save()
+            return Response({"message": "User confirmed successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
