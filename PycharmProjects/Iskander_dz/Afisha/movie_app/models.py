@@ -3,7 +3,9 @@ from django.contrib.auth.models import AbstractUser, Group, Permission
 import random
 
 
+
 class Director(models.Model):
+    objects = None
     name = models.CharField(max_length=100)
 
     def __str__(self):
@@ -11,6 +13,7 @@ class Director(models.Model):
 
 
 class Movie(models.Model):
+    objects = None
     title = models.CharField(max_length=255)
     description = models.TextField()
     duration = models.PositiveIntegerField()
@@ -21,6 +24,7 @@ class Movie(models.Model):
 
 
 class Review(models.Model):
+    objects = None
     text = models.TextField()
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     stars = models.PositiveIntegerField(default=1)
@@ -30,9 +34,7 @@ class Review(models.Model):
 
 
 class User(AbstractUser):
-    # Adding a confirmation code field
-    confirmation_code = models.CharField(max_length=6, blank=True, null=True)
-
+    confirmation_code = models.CharField(max_length=6, blank=True)
     groups = models.ManyToManyField(
         Group,
         related_name='movieapp_users',
