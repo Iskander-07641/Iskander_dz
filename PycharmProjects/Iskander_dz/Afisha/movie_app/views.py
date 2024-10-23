@@ -1,14 +1,17 @@
+from django.db.models import Avg, Count
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.response import Response
-from django.http import Http404
+from django.http import JsonResponse
+from movie_app.db_connection import get_connection
+
+
 from .models import Director, Movie, Review, User
 from .serializers import (DirectorSerializer,
                           MovieSerializer,
                           ReviewSerializer,
                           UserRegistrationSerializer,
                           UserConfirmationSerializer)
-from django.db.models import Avg, Count
 
 
 class DirectorList(generics.ListCreateAPIView):
@@ -92,3 +95,16 @@ class UserConfirmationView(generics.CreateAPIView):
             except User.DoesNotExist:
                 return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def my_view(request):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM your_table;")
+    results = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+
+    return JsonResponse(results, safe=False)

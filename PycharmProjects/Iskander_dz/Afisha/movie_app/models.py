@@ -34,6 +34,7 @@ class Review(models.Model):
 
 
 class User(AbstractUser):
+    DoesNotExist = None
     confirmation_code = models.CharField(max_length=6, blank=True)
     groups = models.ManyToManyField(
         Group,
